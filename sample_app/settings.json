@@ -1,0 +1,6 @@
+{
+  "app_name": "PHANTOM Sample",
+  "version": "1.0.0",
+  "license_required": true,
+  "features": ["core", "export"]
+}

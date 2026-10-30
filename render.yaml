@@ -1,0 +1,22 @@
+# Render Blueprint - deploys ONLY the license server (stateless) on the free plan.
+# Render dashboard -> New -> Blueprint -> select this repo. Secrets are prompted for (sync: false).
+services:
+  - type: web
+    name: phantom-license-server
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass   # deploy only after GitHub Actions CI passes
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PHANTOM_PRODUCT_ID
+        value: PHANTOM-DEMO
+      - key: PHANTOM_PRIVATE_KEY
+        sync: false
+      - key: PHANTOM_ADMIN_SECRET
+        sync: false
+      - key: PHANTOM_REVOKED_LICENSES
+        sync: false

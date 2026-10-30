@@ -1,0 +1,4 @@
+# Runtime dependencies for the license server (the client needs only client/requirements.txt)
+fastapi==0.115.6
+uvicorn==0.34.0
+cryptography==44.0.0

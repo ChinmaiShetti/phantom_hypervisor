@@ -1,0 +1,84 @@
+# PHANTOM local stack: license server + protected client on a private bridge network.
+#   docker compose build && docker compose up -d
+# Values come from .env (see .env.example); everything has a working default.
+name: phantom
+
+services:
+  phantom-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: phantom-server:latest
+    container_name: phantom-server
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      PHANTOM_PRIVATE_KEY: ${PHANTOM_PRIVATE_KEY:-}
+      PHANTOM_ADMIN_SECRET: ${PHANTOM_ADMIN_SECRET:-}
+      PHANTOM_PRODUCT_ID: ${PHANTOM_PRODUCT_ID:-PHANTOM-DEMO}
+      PHANTOM_REVOKED_LICENSES: ${PHANTOM_REVOKED_LICENSES:-}
+      PORT: 8000
+    ports:
+      - "${HOST_PORT:-8000}:8000"     # host:container - dashboard at http://localhost:8000
+    volumes:
+      - phantom-server-data:/data       # SQLite DB, logs, dev keys survive container re-creation
+    networks:
+      - phantom-net
+    restart: unless-stopped
+    read_only: true                     # container root filesystem is immutable
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  phantom-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: phantom-client:latest
+    container_name: phantom-client
+    command: ["run"]
+    environment:
+      # Service name resolves via Docker's embedded DNS - not localhost.
+      # Set LICENSE_SERVER_URL in .env to https://<app>.onrender.com to use the cloud server.
+      LICENSE_SERVER_URL: ${LICENSE_SERVER_URL:-http://phantom-server:8000}
+      PHANTOM_PUBLIC_KEY: ${PHANTOM_PUBLIC_KEY:-}
+      PHANTOM_PRODUCT_ID: ${PHANTOM_PRODUCT_ID:-PHANTOM-DEMO}
+      CLIENT_ID: ${CLIENT_ID:-phantom-client-01}
+      CHECK_INTERVAL_SECONDS: ${CHECK_INTERVAL_SECONDS:-20}
+      OFFLINE_GRACE_SECONDS: ${OFFLINE_GRACE_SECONDS:-60}
+      DEBUGGER_POLICY: ${DEBUGGER_POLICY:-warn}
+      PHANTOM_SIMULATE_DEBUGGER: ${PHANTOM_SIMULATE_DEBUGGER:-0}
+    volumes:
+      - phantom-client-data:/data       # installed license, pinned key, app copy, cached manifest
+    networks:
+      - phantom-net
+    depends_on:
+      phantom-server:
+        condition: service_healthy
+        required: false                 # client still starts when pointed at Render
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+    # No "ports:" - the client exposes nothing; it only makes outbound requests.
+
+networks:
+  phantom-net:
+    name: phantom-net
+    driver: bridge
+
+volumes:
+  phantom-server-data:
+  phantom-client-data:

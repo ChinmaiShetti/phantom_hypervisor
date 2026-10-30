@@ -1,0 +1,10 @@
+[project]
+name = "phantom"
+version = "1.0.0"
+description = "PHANTOM - educational software protection, DRM and anti-tamper simulation"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

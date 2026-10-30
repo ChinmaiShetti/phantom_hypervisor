@@ -1,0 +1,2 @@
+# Normalise line endings so SHA-256 of sample files is identical on Windows and Linux
+* text=auto eol=lf

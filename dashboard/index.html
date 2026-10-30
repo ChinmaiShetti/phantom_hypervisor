@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHANTOM Console</title>
+  <meta name="description" content="PHANTOM software protection, DRM and anti-tamper monitoring console">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z' fill='%237c6cff'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 2 4 7v8c0 7.5 5.1 13.4 12 15 6.9-1.6 12-7.5 12-15V7z" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M11 16.5l3.5 3.5L21.5 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div>
+      <div class="brand-name">PHANTOM</div>
+      <div class="brand-sub">Software Protection &amp; Anti-Tamper Console</div>
+    </div>
+  </div>
+  <div class="top-meta">
+    <span id="server-pill" class="pill pill-wait"><span class="dot"></span><span id="server-pill-text">Connecting…</span></span>
+    <span class="meta-item"><span class="meta-label">ENV</span> <span id="meta-env">—</span></span>
+    <span class="meta-item"><span class="meta-label">KEY</span> <span id="meta-key" class="mono">—</span></span>
+    <span class="meta-item"><span class="meta-label">UPTIME</span> <span id="meta-uptime">—</span></span>
+  </div>
+  <form id="admin-form" class="admin" autocomplete="off">
+    <label for="admin-secret" class="sr-only">Admin secret</label>
+    <input id="admin-secret" type="password" placeholder="Admin secret" spellcheck="false">
+    <button type="submit" class="btn btn-ghost" id="admin-btn">Unlock admin</button>
+    <span id="admin-state" class="chip chip-muted">Admin locked</span>
+  </form>
+</header>
+
+<main class="wrap">
+  <!-- ======================================================= system status -->
+  <section class="status-row" aria-label="System status">
+    <article class="status-card" id="card-server">
+      <div class="status-icon"></div>
+      <div>
+        <div class="status-title">License Server</div>
+        <div class="status-value" id="st-server">—</div>
+        <div class="status-note" id="st-server-note">Health endpoint polled every 3 s</div>
+      </div>
+    </article>
+    <article class="status-card" id="card-protection">
+      <div class="status-icon"></div>
+      <div>
+        <div class="status-title">Application Protection</div>
+        <div class="status-value" id="st-protection">—</div>
+        <div class="status-note" id="st-protection-note">SHA-256 manifest, Ed25519-signed</div>
+      </div>
+    </article>
+    <article class="status-card" id="card-clients">
+      <div class="status-icon"></div>
+      <div>
+        <div class="status-title">Protected Clients</div>
+        <div class="status-value" id="st-clients">—</div>
+        <div class="status-note" id="st-clients-note">Docker client container heartbeats</div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ======================================================= KPIs -->
+  <section class="kpis" aria-label="Key metrics">
+    <div class="kpi"><div class="kpi-label">Active licenses</div><div class="kpi-value ok" id="k-active">0</div></div>
+    <div class="kpi"><div class="kpi-label">Expired licenses</div><div class="kpi-value warn" id="k-expired">0</div></div>
+    <div class="kpi"><div class="kpi-label">Revoked licenses</div><div class="kpi-value bad" id="k-revoked">0</div></div>
+    <div class="kpi"><div class="kpi-label">Verification requests</div><div class="kpi-value" id="k-total">0</div></div>
+    <div class="kpi"><div class="kpi-label">Failed verifications</div><div class="kpi-value warn" id="k-failed">0</div></div>
+    <div class="kpi"><div class="kpi-label">Invalid / forged keys</div><div class="kpi-value bad" id="k-invalid">0</div></div>
+    <div class="kpi"><div class="kpi-label">Tampering alerts</div><div class="kpi-value bad" id="k-tamper">0</div></div>
+    <div class="kpi"><div class="kpi-label">Admin auth failures</div><div class="kpi-value warn" id="k-auth">0</div></div>
+  </section>
+
+  <div class="grid">
+    <!-- ======================================================= left column -->
+    <div class="col">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>License Operations</h2>
+          <span class="panel-hint">Ed25519 signed · admin actions need the secret</span>
+        </div>
+
+        <form id="gen-form" class="gen-form">
+          <label>Licensee
+            <input id="gen-licensee" value="Skill Lab Demo" maxlength="64" required>
+          </label>
+          <label>Valid for (days)
+            <input id="gen-days" type="number" value="30" min="-365" max="3650" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Generate test license</button>
+        </form>
+
+        <div class="license-box">
+          <div class="license-head">
+            <span>Current license key</span>
+            <button class="btn btn-small btn-ghost" id="copy-btn" type="button">Copy</button>
+          </div>
+          <textarea id="license-key" class="mono" rows="3" spellcheck="false" placeholder="Generate a license above, or paste any PHM1.… key here to verify it"></textarea>
+          <div id="license-claims" class="claims"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" data-action="verify" type="button"><b>Verify license</b><small>Online check</small></button>
+          <button class="btn btn-bad" data-action="forge" type="button"><b>Forge license</b><small>Edit expiry, keep signature</small></button>
+          <button class="btn btn-warn" data-action="expired" type="button"><b>Expired license</b><small>Issue at −1 day &amp; verify</small></button>
+          <button class="btn btn-bad" data-action="revoke" type="button"><b>Revoke &amp; verify</b><small>Server-side kill switch</small></button>
+          <button class="btn" data-action="garbage" type="button"><b>Garbage key</b><small>Malformed input</small></button>
+        </div>
+
+        <div id="verdict" class="verdict verdict-idle">
+          <div class="verdict-badge" id="verdict-badge">AWAITING TEST</div>
+          <div class="verdict-body">
+            <div class="verdict-code mono" id="verdict-code">—</div>
+            <div class="verdict-msg" id="verdict-msg">Run any license test to see the validation pipeline result.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Integrity Lab</h2>
+          <span class="panel-hint">Disposable copy of <span class="mono">sample_app/</span> on the server</span>
+        </div>
+        <div class="actions actions-5">
+          <button class="btn btn-primary" data-int="verify" type="button"><b>Run integrity check</b><small>SHA-256 compare</small></button>
+          <button class="btn btn-bad" data-int="tamper" type="button"><b>Modify file</b><small>Simulated patch</small></button>
+          <button class="btn btn-bad" data-int="delete" type="button"><b>Delete file</b><small>Missing resource</small></button>
+          <button class="btn btn-warn" data-int="inject" type="button"><b>Inject file</b><small>Unexpected module</small></button>
+          <button class="btn btn-ok" data-int="restore" type="button"><b>Restore</b><small>Trusted build</small></button>
+        </div>
+        <div id="int-result" class="int-result">
+          <div class="int-status" id="int-status">No check run yet</div>
+          <table class="table">
+            <thead><tr><th>File</th><th>Status</th><th>Trusted SHA-256</th><th>Observed SHA-256</th></tr></thead>
+            <tbody id="int-files"><tr><td colspan="4" class="empty">Run an integrity check</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>License Registry</h2>
+          <span class="panel-hint">Admin view · SQLite</span>
+        </div>
+        <div class="table-scroll">
+          <table class="table">
+            <thead><tr><th>License ID</th><th>Licensee</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+            <tbody id="registry"><tr><td colspan="5" class="empty">Unlock admin to view the registry</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================= right column -->
+    <div class="col">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Verification History</h2>
+          <span class="panel-hint">Last 30 minutes · per minute</span>
+        </div>
+        <div class="legend">
+          <span><i class="sw sw-ok"></i>Valid</span>
+          <span><i class="sw sw-warn"></i>Rejected</span>
+          <span><i class="sw sw-bad"></i>Tamper alerts</span>
+        </div>
+        <svg id="chart" class="chart" viewBox="0 0 600 180" preserveAspectRatio="none" role="img" aria-label="Verification history chart"></svg>
+        <div class="chart-axis"><span>−30 min</span><span>−15 min</span><span>now</span></div>
+        <div class="codes" id="codes"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Protected Clients</h2>
+          <span class="panel-hint">From the <span class="mono">phantom-client</span> container</span>
+        </div>
+        <div id="clients" class="clients"><div class="empty">No client has checked in yet. Start it with <span class="mono">docker compose up -d</span>.</div></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Integrity Status</h2>
+          <span class="panel-hint">Latest check from any source</span>
+        </div>
+        <dl class="facts">
+          <div><dt>Last result</dt><dd id="f-int-last">—</dd></div>
+          <div><dt>Checked</dt><dd id="f-int-target">—</dd></div>
+          <div><dt>Server workspace</dt><dd id="f-int-ws">—</dd></div>
+          <div><dt>Trusted files</dt><dd id="f-int-files">—</dd></div>
+          <div><dt>Total checks</dt><dd id="f-int-checks">—</dd></div>
+          <div><dt>Rate-limited requests</dt><dd id="f-rate">—</dd></div>
+        </dl>
+      </section>
+    </div>
+  </div>
+
+  <!-- ======================================================= events -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Security Event Log</h2>
+      <div class="filters" role="group" aria-label="Severity filter">
+        <button class="chip-btn active" data-sev="">All</button>
+        <button class="chip-btn" data-sev="critical">Critical</button>
+        <button class="chip-btn" data-sev="warning">Warning</button>
+        <button class="chip-btn" data-sev="info">Info</button>
+        <label class="toggle"><input type="checkbox" id="live" checked> Live</label>
+      </div>
+    </div>
+    <div class="table-scroll tall">
+      <table class="table events">
+        <thead><tr><th>Time</th><th>Severity</th><th>Category</th><th>Source</th><th>Event</th></tr></thead>
+        <tbody id="events"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    PHANTOM is an educational simulation of software-protection concepts. It protects only its own sample files
+    and does not interact with any commercial DRM. <a href="/docs">API docs</a>
+  </footer>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

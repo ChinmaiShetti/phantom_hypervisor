@@ -1,0 +1,2 @@
+# The client uses only the standard library for HTTP; cryptography verifies Ed25519 signatures.
+cryptography==44.0.0

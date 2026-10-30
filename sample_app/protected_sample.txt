@@ -1,0 +1,9 @@
+PHANTOM PROTECTED SAMPLE APPLICATION
+====================================
+This file stands in for the binary of a protected program.
+Its SHA-256 hash is recorded in a signed manifest by the PHANTOM license server.
+
+Any modification (patching a license check, injecting code, deleting
+resources) changes the hash, and the protected client refuses to run.
+
+UNLOCKED CONTENT: "Welcome to PHANTOM - your license and integrity checks passed."
